@@ -1,0 +1,77 @@
+name: Nia AutoBuild (Windows Runner)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Target task (build/test/deploy)'
+        required: true
+        default: 'build'
+      runner:
+        description: 'Runner to use (windows-latest or self-hosted)'
+        required: true
+        default: 'windows-latest'
+
+jobs:
+  autobuild:
+    runs-on: ${{ github.event.inputs.runner }}
+    if: ${{ github.event.inputs.runner == 'windows-latest' || startsWith(github.event.inputs.runner, 'self-hosted') }}
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup PowerShell (for ubuntu self-hosted runners that may need pwsh)
+        if: runner.os != 'Windows'
+        uses: actions/setup-powershell@v2
+
+      - name: Ensure execution policy & prerequisites
+        shell: pwsh
+        run: |
+          Write-Host "Setting ExecutionPolicy to RemoteSigned for current user..."
+          Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned -Force
+          # Optional: install modules used by the script
+          if (-not (Get-Module -ListAvailable -Name PSDesiredStateConfiguration)) {
+            Install-Module -Name PSDesiredStateConfiguration -Force -Scope CurrentUser -AllowClobber
+          }
+
+      - name: Run Invoke-AutoBuild.ps1
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NIA_ENV: production
+        run: |
+          $scriptPath = ".\scripts\Invoke-AutoBuild.ps1"
+          if (-not (Test-Path $scriptPath)) {
+            Write-Error "Invoke-AutoBuild.ps1 not found at $scriptPath"
+            exit 2
+          }
+          & $scriptPath -Target "${{ github.event.inputs.target }}" -GitHubToken "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nia-autobuild-artifacts
+          path: |
+            .\build\**
+# quantum/quantum_randomness.py
+# Research stub: produce entropy bits using a simulated quantum circuit (local qiskit)
+from qiskit import QuantumCircuit, Aer, execute
+
+def quantum_random_bit():
+    qc = QuantumCircuit(1,1)
+    qc.h(0)
+    qc.measure(0,0)
+    backend = Aer.get_backend('qasm_simulator')
+    job = execute(qc, backend, shots=1)
+    result = job.result().get_counts()
+    return int(list(result.keys())[0])
+
+if __name__ == "__main__":
+    print("Quantum bit:", quantum_random_bit())
+
+            .\artifacts\**
