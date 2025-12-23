@@ -1,0 +1,9 @@
+ Create these directories/files:
+├── app/
+│   ├── main.py              ← FastAPI application
+│   ├── requirements.txt     ← Python dependencies
+│   └── Dockerfile           ← Container definition
+├── helm/nia-decision-engine/templates/
+│   └── deployment.yaml      ← Kubernetes deployment
+└── flux-system/
+    └── HelmRelease.yaml
